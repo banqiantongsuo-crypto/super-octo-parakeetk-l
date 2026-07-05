@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🎉 自定义出狱庆祝</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(145deg, #fdf6f0 0%, #fef9f2 100%);
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(16px);
+            border-radius: 48px;
+            padding: 32px 28px 40px;
+            box-shadow: 0 20px 60px rgba(180, 80, 50, 0.12);
+            border: 1px solid rgba(255, 215, 180, 0.3);
+            text-align: center;
+        }
+
+        /* 输入区域 */
+        .input-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+            padding: 14px 20px;
+            border-radius: 60px;
+            background: rgba(255, 240, 230, 0.4);
+        }
+
+        .input-area input {
+            flex: 1 1 180px;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 40px;
+            background: rgba(255, 255, 255, 0.75);
+            font-size: 1rem;
+            font-weight: 500;
+            color: #4d2e24;
+            outline: 2px solid transparent;
+            transition: outline 0.2s;
+            font-family: inherit;
+        }
+
+        .input-area input:focus {
+            outline: 2px solid #d48a7a;
+        }
+
+        .input-area .btn-celebrate {
+            padding: 10px 28px;
+            border: none;
+            border-radius: 40px;
+            background: linear-gradient(135deg, #e05a3a, #c94830);
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 14px rgba(200, 80, 50, 0.25);
+            font-family: inherit;
+        }
+
+        .input-area .btn-celebrate:hover {
+            transform: scale(1.02);
+        }
+
+        /* 标题 */
+        .title {
+            font-size: clamp(2rem, 6vw, 3.6rem);
+            font-weight: 800;
+            color: #b13a2b;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 6px 14px;
+        }
+
+        .title #mainTitle {
+            background: linear-gradient(135deg, #b13a2b, #d45a3a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #b07a6a;
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+
+        /* ===== 鞭炮容器（DOM版） ===== */
+        .firecracker-row {
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 6px;
+            padding: 20px 10px;
+            cursor: pointer;
+            flex-wrap: wrap;
+            background: rgba(255, 245, 235, 0.3);
+            border-radius: 32px;
+            min-height: 140px;
+            position: relative;
+            margin: 8px 0 12px;
+        }
+
+        /* 单个鞭炮 */
+        .cracker {
+            width: 34px;
+            height: 58px;
+            background: linear-gradient(180deg, #d42a1a 0%, #b81f10 100%);
+            border-radius: 6px 6px 10px 10px;
+            position: relative;
+            transition: transform 0.1s;
+            flex-shrink: 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 200, 150, 0.2);
+            transform-origin: bottom center;
+        }
+
+        /* 鞭炮上的金色环 */
+        .cracker::before {
+            content: '';
+            position: absolute;
+            left: 10%;
+            right: 10%;
+            height: 4px;
+            background: linear-gradient(90deg, #f7d44a, #fae86a, #f7d44a);
+            border-radius: 2px;
+            top: 30%;
+            box-shadow: 0 12px 0 #f7d44a, 0 12px 0 #fae86a;
+            opacity: 0.8;
+        }
+
+        /* 引线 */
+        .cracker::after {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 16px;
+            background: #6a4a2a;
+            top: -16px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+
+        /* 引线头小圆点 */
+        .fuse-tip {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #8a6a3a;
+            border-radius: 50%;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* ===== 爆炸粒子 (使用伪元素 + 额外span) ===== */
+        .cracker .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 10;
+        }
+
+        /* 爆炸动画：粒子飞散 */
+        .cracker.explode .particle {
+            animation: particleBurst 0.8s ease-out forwards;
+        }
+
+        @keyframes particleBurst {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--tx), var(--ty)) scale(0);
+            }
+        }
+
+        /* 鞭炮爆炸后消失变灰 */
+        .cracker.explode {
+            background: #555 !important;
+            transform: scale(0.8);
+            opacity: 0.4;
+            box-shadow: none;
+            border-color: #444;
+        }
+        .cracker.explode::before {
+            opacity: 0.2;
+        }
+        .cracker.explode::after {
+            opacity: 0.2;
+        }
+
+        /* 连接鞭炮的线（纯装饰） */
+        .cracker-line {
+            width: 8px;
+            height: 2px;
+            background: rgba(100, 70, 50, 0.3);
+            margin-bottom: 20px;
+            flex-shrink: 0;
+        }
+
+        /* 提示与底部 */
+        .hint {
+            font-size: 1rem;
+            color: #c28b7a;
+            margin-top: 8px;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .footer-status {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(200, 170, 155, 0.2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            color: #bba394;
+        }
+
+        .footer-status .badge {
+            background: rgba(200, 80, 60, 0.08);
+            padding: 4px 16px;
+            border-radius: 40px;
+            color: #b13a2b;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: default;
+        }
+
+        .footer-status .badge.reset-btn {
+            cursor: pointer;
+            background: rgba(180, 120, 100, 0.1);
+            transition: background 0.2s;
+        }
+        .footer-status .badge.reset-btn:hover {
+            background: rgba(180, 120, 100, 0.2);
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 20px 12px;
+            }
+            .cracker {
+                width: 28px;
+                height: 48px;
+            }
+            .firecracker-row {
+                gap: 4px;
+                padding: 16px 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="appContainer">
+        <div class="input-area">
+            <label for="nameInput">🎉 庆祝谁？</label>
+            <input type="text" id="nameInput" value="征侧No.2" />
+            <button class="btn-celebrate" id="celebrateBtn">🎊 庆祝！</button>
+        </div>
+
+        <div class="title">
+            <span>🧨</span>
+            <span id="mainTitle">征侧No.2</span>出狱重回史专
+            <span>🧨</span>
+        </div>
+        <div class="subtitle">✨ 普天同庆 · 鞭炮齐鸣 ✨</div>
+
+        <!-- 鞭炮行 -->
+        <div class="firecracker-row" id="crackerRow"></div>
+
+        <div class="hint">
+            <span>👆 点击鞭炮或按「庆祝」燃放</span>
+            <span class="status-text" id="statusText">待引爆</span>
+        </div>
+
+        <div class="footer-status">
+            <span class="badge">🎊 大吉大利</span>
+            <span class="badge reset-btn" id="resetBtn">⟳ 重放一次</span>
+            <span class="badge" id="countDisplay">💥 0 / 12</span>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ---------- 配置 ----------
+            const TOTAL = 12;
+            const COLORS = ['#ff4d4d', '#ff6b35', '#ffaa00', '#ffdd44', '#ff8080', '#ff3333'];
+
+            // ---------- DOM 元素 ----------
+            const row = document.getElementById('crackerRow');
+            const statusText = document.getElementById('statusText');
+            const countDisplay = document.getElementById('countDisplay');
+            const resetBtn = document.getElementById('resetBtn');
+            const nameInput = document.getElementById('nameInput');
+            const celebrateBtn = document.getElementById('celebrateBtn');
+            const mainTitle = document.getElementById('mainTitle');
+
+            let crackers = [];
+            let isExploding = false;
+            let explodeIndex = 0;
+            let allDone = false;
+            let timer = null;
+
+            // ---------- 生成鞭炮 ----------
+            function buildCrackers() {
+                row.innerHTML = '';
+                crackers = [];
+                for (let i = 0; i < TOTAL; i++) {
+                    const cracker = document.createElement('div');
+                    cracker.className = 'cracker';
+                    cracker.dataset.index = i;
+
+                    // 引线头
+                    const tip = document.createElement('div');
+                    tip.className = 'fuse-tip';
+                    cracker.appendChild(tip);
+
+                    // 预置粒子 (散落方向)
+                    for (let j = 0; j < 20; j++) {
+                        const p = document.createElement('span');
+                        p.className = 'particle';
+                        const angle = Math.random() * Math.PI * 2;
+                        const dist = 40 + Math.random() * 80;
+                        const tx = Math.cos(angle) * dist;
+                        const ty = Math.sin(angle) * dist - 30;
+                        p.style.setProperty('--tx', tx + 'px');
+                        p.style.setProperty('--ty', ty + 'px');
+                        p.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
+                        p.style.width = (4 + Math.random() * 8) + 'px';
+                        p.style.height = p.style.width;
+                        cracker.appendChild(p);
+                    }
+
+                    row.appendChild(cracker);
+                    crackers.push(cracker);
+                }
+            }
+
+            // ---------- 重置状态 ----------
+            function resetAll() {
+                if (timer) {
+                    clearTimeout(timer);
+                    timer = null;
+                }
+                isExploding = false;
+                explodeIndex = 0;
+                allDone = false;
+                statusText.textContent = '待引爆';
+                countDisplay.textContent = `💥 0 / ${TOTAL}`;
+                document.getElementById('appContainer').classList.remove('celebrate');
+
+                // 重置每个鞭炮的样式
+                crackers.forEach(c => {
+                    c.classList.remove('explode');
+                    c.style.opacity = '1';
+                    c.style.transform = '';
+                });
+            }
+
+            // ---------- 引爆下一个 ----------
+            function triggerNext() {
+                if (explodeIndex >= TOTAL) {
+                    isExploding = false;
+                    allDone = true;
+                    statusText.textContent = '🎉 燃放完毕！';
+                    countDisplay.textContent = `💥 ${TOTAL} / ${TOTAL}`;
+                    document.getElementById('appContainer').classList.add('celebrate');
+                    return;
+                }
+
+                const c = crackers[explodeIndex];
+                if (c) {
+                    c.classList.add('explode');
+                    // 播放个小震动
+                    c.style.transform = 'scale(1.1)';
+                    setTimeout(() => { c.style.transform = ''; }, 100);
+                }
+
+                explodeIndex++;
+                const current = Math.min(explodeIndex, TOTAL);
+                countDisplay.textContent = `💥 ${current} / ${TOTAL}`;
+                statusText.textContent = `🔥 燃放中 ${current}/${TOTAL}`;
+
+                if (explodeIndex < TOTAL) {
+                    const delay = 150 + Math.random() * 80;
+                    timer = setTimeout(() => {
+                        triggerNext();
+                    }, delay);
+                } else {
+                    // 最后一个爆炸完，延迟标记完成
+                    timer = setTimeout(() => {
+                        if (!allDone) {
+                            allDone = true;
+                            statusText.textContent = '🎉 燃放完毕！';
+                            countDisplay.textContent = `💥 ${TOTAL} / ${TOTAL}`;
+                            document.getElementById('appContainer').classList.add('celebrate');
+                        }
+                    }, 400);
+                }
+            }
+
+            // ---------- 开始燃放 ----------
+            function startFireworks() {
+                if (isExploding || allDone) {
+                    resetAll();
+                    // 延迟一帧重新触发
+                    requestAnimationFrame(() => { startFireworks(); });
+                    return;
+                }
+                // 检查是否已全部爆炸（重置后状态）
+                const anyExploded = crackers.some(c => c.classList.contains('explode'));
+                if (anyExploded) {
+                    resetAll();
+                    requestAnimationFrame(() => { startFireworks(); });
+                    return;
+                }
+
+                isExploding = true;
+                statusText.textContent = '🔥 点燃引线...';
+                document.getElementById('appContainer').classList.remove('celebrate');
+
+                setTimeout(() => {
+                    triggerNext();
+                }, 300);
+            }
+
+            // ---------- 重置并播放 ----------
+            function resetAndPlay() {
+                resetAll();
+                setTimeout(() => {
+                    startFireworks();
+                }, 150);
+            }
+
+            // ---------- 更新名字 ----------
+            function updateNameAndCelebrate() {
+                let name = nameInput.value.trim();
+                if (name === '') {
+                    name = '征侧No.2';
+                    nameInput.value = name;
+                }
+                mainTitle.textContent = name;
+                resetAndPlay();
+            }
+
+            // ---------- 事件绑定 ----------
+            row.addEventListener('click', (e) => {
+                if (isExploding || allDone) {
+                    resetAndPlay();
+                } else {
+                    startFireworks();
+                }
+            });
+
+            resetBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                resetAndPlay();
+            });
+
+            celebrateBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                updateNameAndCelebrate();
+            });
+
+            nameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    updateNameAndCelebrate();
+                }
+            });
+
+            // ---------- 初始化 ----------
+            buildCrackers();
+            resetAll();
+            console.log('🧨 DOM鞭炮已加载，稳定无兼容问题！');
+        })();
+    </script>
+
+</body>
+</html>
